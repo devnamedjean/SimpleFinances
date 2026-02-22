@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, CreditCard, Activity, ArrowRightLeft, LogOut, PieChart, ShieldCheck } from 'lucide-react';
+import { Wallet, Activity, ArrowRightLeft } from 'lucide-react';
 
 interface Transaction {
     id: string;
