@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, Activity, ArrowRightLeft } from 'lucide-react';
+import { Wallet, Activity, ArrowRightLeft, Home, History, Landmark, LogOut } from 'lucide-react';
 
 interface Transaction {
     id: string;
@@ -86,6 +86,8 @@ function App() {
     const [data, setData] = useState<SimpleFINData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState<'home' | 'activity' | 'accounts'>('home');
+    const [showGuide, setShowGuide] = useState(false);
 
     const hasEnvConfig = !!import.meta.env.VITE_SIMPLEFIN_ACCESS_URL;
 
@@ -118,6 +120,10 @@ function App() {
         localStorage.removeItem('simplefin_access_url');
         setAccessUrl(null);
         setData(null);
+        // Clear the URL parameters (like ?demo=true) so it doesn't auto-login
+        if (window.location.search) {
+            window.history.replaceState({}, '', window.location.pathname);
+        }
     };
 
     useEffect(() => {
@@ -277,15 +283,14 @@ function App() {
 
     if (!accessUrl && !hasEnvConfig && !(new URLSearchParams(window.location.search).get('demo') === 'true')) {
         return (
-            <div className="layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-                <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                        <div style={{ marginBottom: '20px' }}>
-                                                                                                                                                    <img src="/favicon.svg" alt="Simple Finances" style={{ width: '64px', height: '64px' }} />
-                                                                                                                                                </div>
-                                                                                                                                                <h2 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>Simple Finances</h2>
-                                                                                                                            
-                                                                                                                                                                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Secure, unified financial monitoring.</p>
+            <div className="login-layout">
+                <div className="login-panel">
+                    <div className="login-header">
+                        <div className="login-logo">
+                            <img src="/favicon.svg" alt="Simple Finances" />
+                        </div>
+                        <h2>Simple Finances</h2>
+                        <p>Access your complete financial dashboard. Secure, unified, and real-time monitoring of all your accounts.</p>
                     </div>
                     <form className="auth-form" onSubmit={handleLogin}>
                         <input
@@ -293,15 +298,44 @@ function App() {
                             placeholder="SimpleFIN Setup Token"
                             value={setupToken}
                             onChange={e => setSetupToken(e.target.value)}
-                            style={{ textAlign: 'center' }}
+                            className="auth-input-center"
                         />
-                        {error && <div style={{ color: 'var(--liability)', fontSize: '0.875rem' }}>{error}</div>}
-                        <button type="submit" disabled={loading}>
+                        <div className="guide-toggle">
+                            <button type="button" className="text-link-btn" onClick={() => setShowGuide(!showGuide)}>
+                                {showGuide ? 'Close Guide' : 'How do I get a token?'}
+                            </button>
+                        </div>
+
+                        {showGuide && (
+                            <div className="setup-guide-panel">
+                                <div className="guide-section">
+                                    <h3>🛡️ Your Security is Priority</h3>
+                                    <p>This dashboard <strong>never</strong> asks for your bank password. We use SimpleFIN to securely fetch your data without ever seeing your login credentials.</p>
+                                </div>
+
+                                <div className="guide-section">
+                                    <h3>🚀 How to get started</h3>
+                                    <ol>
+                                        <li>Create an account at <a href="https://bridge.simplefin.org/" target="_blank" rel="noopener">SimpleFIN Bridge</a> (the secure data layer).</li>
+                                        <li>Connect your bank accounts within their secure portal.</li>
+                                        <li>In your SimpleFIN dashboard, look for <strong>"Copy Setup Token"</strong>.</li>
+                                        <li>Paste that token into the field above and click Connect.</li>
+                                    </ol>
+                                </div>
+
+                                <div className="guide-section privacy-note">
+                                    <p><strong>Note:</strong> Your token is stored locally in your browser. No financial data is ever sent to our servers—it goes directly from SimpleFIN to your device.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {error && <div className="error-text">{error}</div>}
+                        <button type="submit" className="auth-button" disabled={loading}>
                             {loading ? 'Authenticating...' : 'Connect Accounts'}
                         </button>
                     </form>
-                    <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                        <a href="?demo=true" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Preview with Demo Data</a>
+                    <div className="demo-link-container">
+                        <a href="?demo=true" className="demo-link">Preview with Demo Data</a>
                     </div>
                 </div>
             </div>
@@ -310,243 +344,230 @@ function App() {
 
     return (
         <div className="layout">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img src="/favicon.svg" alt="Simple Finances" style={{ width: '32px', height: '32px' }} />
+            <header className="app-header">
+                <div className="header-brand">
+                    <img src="/favicon.svg" alt="Simple Finances" className="header-logo" />
                     <div>
-                        <h1 className="hero-title" style={{ fontSize: '1.5rem', marginBottom: 0, fontWeight: 800 }}>Simple Finances</h1>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500 }}>Dashboard active & synced.</p>
+                        <h1 className="hero-title">Simple Finances</h1>
+                        <p className="header-status">Dashboard active & synced.</p>
                     </div>
                 </div>
                 {!hasEnvConfig && (
-                    <button onClick={logout} style={{ padding: '8px 16px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '10px', fontWeight: 600 }}>
-                        Disconnect
+                    <button onClick={logout} className="logout-button">
+                        <span className="mobile-hidden">Disconnect</span>
+                        <LogOut size={18} className="desktop-hidden" />
                     </button>
                 )}
             </header>
 
-            {error && <div className="glass-panel" style={{ color: 'var(--liability)', marginBottom: '24px', flexShrink: 0 }}>{error}</div>}
-            {loading && !data && <div className="glass-panel" style={{ flexShrink: 0, textAlign: 'center', padding: '40px' }}>
-                <Activity className="spinning" style={{ margin: '0 auto 16px' }} />
-                <p style={{ fontWeight: 600 }}>Synchronizing data...</p>
+            {error && <div className="glass-panel error-panel">{error}</div>}
+            {loading && !data && <div className="glass-panel loading-panel">
+                <Activity className="spinning" />
+                <p className="loading-text">Synchronizing data...</p>
             </div>}
 
             {data && (
-                <div className="main-container">
-                    {/* Column 1: Net Worth + Accounts */}
-                    <div className="sidebar-section">
-                        {/* Net Worth Card */}
-                        <div className="glass-panel stat-card" style={{ padding: '20px', flex: '0 0 auto', marginBottom: '20px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                                <div className="stat-icon">
-                                    <Wallet size={20} />
+                <>
+                    <nav className="mobile-tabs">
+                        <button 
+                            className={`tab-btn ${activeTab === 'home' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('home')}
+                        >
+                            <Home size={20} />
+                            <span>Home</span>
+                        </button>
+                        <button 
+                            className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('activity')}
+                        >
+                            <History size={20} />
+                            <span>Activity</span>
+                        </button>
+                        <button 
+                            className={`tab-btn ${activeTab === 'accounts' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('accounts')}
+                        >
+                            <Landmark size={20} />
+                            <span>Accounts</span>
+                        </button>
+                    </nav>
+
+                    <div className="main-container">
+                        {/* Column 1: Net Worth + Accounts (Mobile: Split between Home/Accounts) */}
+                        <div className={`sidebar-section ${activeTab !== 'home' && activeTab !== 'accounts' ? 'mobile-hidden' : ''}`}>
+                            {/* Net Worth Card (Visible in Home Tab) */}
+                            <div className={`glass-panel stat-card ${activeTab === 'accounts' ? 'mobile-hidden' : ''}`}>
+                                <div className="stat-card-header">
+                                    <div className="stat-icon">
+                                        <Wallet size={20} />
+                                    </div>
+                                    <div className="stat-card-info">
+                                        <h3>NET WORTH</h3>
+                                        <div className={`stat-amount ${stats.netWorth < 0 ? 'danger' : ''}`}>
+                                            ${stats.netWorth.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="stat-info" style={{ flex: 1 }}>
-                                    <h3 style={{ fontSize: '0.7rem', fontWeight: 700 }}>NET WORTH</h3>
-                                    <div className="amount" style={{ fontSize: '1.4rem', color: stats.netWorth >= 0 ? 'inherit' : 'var(--liability)' }}>
-                                        ${stats.netWorth.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                <div className="stat-card-footer">
+                                    <div className="stat-footer-row">
+                                        <span>Assets</span>
+                                        <span style={{ color: 'var(--asset)', fontWeight: 600 }}>${stats.assets.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                    </div>
+                                    <div className="stat-footer-row">
+                                        <span>Liabilities</span>
+                                        <span style={{ color: 'var(--liability)', fontWeight: 600 }}>${stats.liabilities.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ 
-                                marginTop: '12px', 
-                                paddingTop: '8px', 
-                                borderTop: '1px solid rgba(255,255,255,0.05)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '2px',
-                                width: '100%'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Assets</span>
-                                    <span style={{ fontWeight: 600, color: 'var(--asset)' }}>${stats.assets.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Liabilities</span>
-                                    <span style={{ fontWeight: 600, color: 'var(--liability)' }}>${stats.liabilities.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="glass-panel" style={{ flex: 1, minHeight: 0 }}>
-                            <h2 className="section-header">
-                                <Activity size={20} style={{ color: 'var(--primary)' }} /> Accounts
-                            </h2>
-                            <div className="scrollable-list">
-                                {Object.entries(
-                                    data.accounts.reduce((groups: Record<string, Account[]>, acc) => {
-                                        const orgName = acc.org?.name || 'Other Institutions';
-                                        if (!groups[orgName]) groups[orgName] = [];
-                                        groups[orgName].push(acc);
-                                        return groups;
-                                    }, {})
-                                ).sort(([a], [b]) => a.localeCompare(b)).map(([bankName, bankAccounts]) => (
-                                    <div key={bankName} className="bank-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
-                                        <div className="bank-name" style={{ 
-                                            fontSize: '0.85rem', 
-                                            fontWeight: 800, 
-                                            color: 'var(--text-main)',
-                                            marginBottom: '16px',
-                                            borderBottom: '1px solid var(--border-color)',
-                                            paddingBottom: '8px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px'
-                                        }}>
-                                            <div style={{ width: '4px', height: '12px', background: 'var(--primary)', borderRadius: '2px' }}></div>
-                                            {bankName}
-                                        </div>
-                                        {['Checking', 'Savings', 'Credit Card', 'Investment', 'Other'].map(type => {
-                                            const typeAccs = bankAccounts.filter(a => getAccountType(a.name) === type);
-                                            if (typeAccs.length === 0) return null;
-                                            return (
-                                                <div key={type} style={{ marginBottom: '12px' }}>
-                                                    <div className="category-label" style={{ 
-                                                        opacity: 0.8,
-                                                        color: type === 'Credit Card' ? 'var(--liability)' : 'var(--asset)',
-                                                        fontSize: '0.65rem',
-                                                        marginBottom: '4px'
-                                                    }}>{type}</div>
-                                                    {typeAccs.sort((a, b) => a.name.localeCompare(b.name)).map(acc => {
-                                                        const bal = parseFloat(acc.balance);
-                                                        return (
-                                                            <div key={acc.id} className="list-item" style={{ padding: '4px 0', borderBottom: 'none', minHeight: 'auto' }}>
-                                                                <div className="name" style={{ 
-                                                                    fontSize: '0.85rem', 
-                                                                    fontWeight: 500, 
-                                                                    color: 'var(--text-muted)',
-                                                                    overflow: 'hidden', 
-                                                                    textOverflow: 'ellipsis', 
-                                                                    whiteSpace: 'nowrap',
-                                                                    maxWidth: '140px'
-                                                                }}>
-                                                                    {acc.name}
-                                                                </div>
-                                                                <div style={{ 
-                                                                    fontWeight: 700, 
-                                                                    fontSize: '0.9rem', 
-                                                                    color: type === 'Credit Card' ? 'var(--liability)' : 'var(--asset)'
-                                                                }}>
-                                                                    ${Math.abs(bal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Column 2: Recent Activity */}
-                    <div className="glass-panel" style={{ height: '100%', flex: 1 }}>
-                        <h2 className="section-header">
-                            <ArrowRightLeft size={20} className="secondary" /> Recent Activity
-                        </h2>
-                        <div className="scrollable-list">
-                            {(() => {
-                                const allTxs = data.accounts
-                                    .flatMap(acc => (acc.transactions || []).map(t => ({ 
-                                        ...t, 
-                                        accountName: acc.name,
-                                        postedDate: Number(t.posted) > 2000000000 ? Number(t.posted) / 1000 : Number(t.posted)
-                                    })))
-                                    .sort((a, b) => b.postedDate - a.postedDate);
-
-                                if (allTxs.length === 0) {
-                                    return (
-                                        <div style={{ color: 'var(--text-muted)', padding: '40px 20px', textAlign: 'center' }}>
-                                            No activity found.
-                                        </div>
-                                    );
-                                }
-
-                                return allTxs.slice(0, 100).map(t => {
-                                    const amt = parseFloat(t.amount);
-                                    return (
-                                        <div key={t.id || Math.random()} className="list-item">
-                                            <div style={{ flex: 1, minWidth: 0, marginRight: '16px' }}>
-                                                <div className="name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {t.description}
-                                                </div>
-                                                <div className="sub-text">
-                                                    {new Date(t.postedDate * 1000).toLocaleDateString()} &middot; {t.accountName}
-                                                </div>
+                            {/* Accounts List (Visible in Accounts Tab) */}
+                            <div className={`glass-panel flex-grow-panel ${activeTab === 'home' ? 'mobile-hidden' : ''}`}>
+                                <h2 className="section-header">
+                                    <Activity size={20} /> Accounts
+                                </h2>
+                                <div className="scrollable-list">
+                                    {Object.entries(
+                                        data.accounts.reduce((groups: Record<string, Account[]>, acc) => {
+                                            const orgName = acc.org?.name || 'Other Institutions';
+                                            if (!groups[orgName]) groups[orgName] = [];
+                                            groups[orgName].push(acc);
+                                            return groups;
+                                        }, {})
+                                    ).sort(([a], [b]) => a.localeCompare(b)).map(([bankName, bankAccounts]) => (
+                                        <div key={bankName} className="bank-group-container">
+                                            <div className="bank-group-title">
+                                                <div className="bank-group-accent"></div>
+                                                {bankName}
                                             </div>
-                                            <div style={{ fontWeight: 700, color: amt < 0 ? 'var(--liability)' : 'var(--asset)' }}>
-                                                {amt > 0 ? '+' : '-'}${Math.abs(amt).toFixed(2)}
-                                            </div>
-                                        </div>
-                                    );
-                                });
-                            })()}
-                        </div>
-                    </div>
-
-                    {/* Column 3: Stats Stack */}
-                    <div className="stats-sidebar">
-                        {/* Spending Card */}
-                        <div className="glass-panel stat-card" style={{ padding: '20px', flex: '0 0 auto', minHeight: 'auto' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                                <div className="stat-icon secondary">
-                                    <Activity size={20} />
-                                </div>
-                                <div className="stat-info" style={{ flex: 1 }}>
-                                    <h3 style={{ fontSize: '0.7rem', fontWeight: 700 }}>30-DAY SPENDING</h3>
-                                    <div className="amount" style={{ fontSize: '1.4rem' }}>${stats.spending30d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-                                </div>
-                            </div>
-                            <div style={{ 
-                                marginTop: '12px', 
-                                paddingTop: '8px', 
-                                borderTop: '1px solid rgba(255,255,255,0.05)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '2px',
-                                width: '100%'
-                            }}>
-                                {Object.entries(stats.spendingByAccount || {})
-                                    .sort(([,a], [,b]) => b - a)
-                                    .slice(0, 2)
-                                    .map(([name, amt]) => (
-                                        <div key={name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                                            <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>{name}</span>
-                                            <span style={{ fontWeight: 600 }}>${amt.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                            {['Checking', 'Savings', 'Credit Card', 'Investment', 'Other'].map(type => {
+                                                const typeAccs = bankAccounts.filter(a => getAccountType(a.name) === type);
+                                                if (typeAccs.length === 0) return null;
+                                                return (
+                                                    <div key={type} className="account-type-group">
+                                                        <div className={`category-label account-type-header ${type === 'Credit Card' ? 'credit' : 'asset'}`}>
+                                                            {type}
+                                                        </div>
+                                                        {typeAccs.sort((a, b) => a.name.localeCompare(b.name)).map(acc => {
+                                                            const bal = parseFloat(acc.balance);
+                                                            return (
+                                                                <div key={acc.id} className="list-item account-item">
+                                                                    <div className="account-name">
+                                                                        {acc.name}
+                                                                    </div>
+                                                                    <div className={`account-balance ${type === 'Credit Card' ? 'danger' : ''}`}>
+                                                                        ${Math.abs(bal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Recurring Panel */}
-                        <div className="glass-panel" style={{ flex: 1, minHeight: 0 }}>
-                            <h2 className="section-header" style={{ marginBottom: '12px', fontSize: '0.9rem' }}>
-                                <Activity size={16} className="danger" /> Subscriptions
+                        {/* Column 2: Recent Activity */}
+                        <div className={`glass-panel full-height-panel ${activeTab !== 'activity' ? 'mobile-hidden' : ''}`}>
+                            <h2 className="section-header">
+                                <ArrowRightLeft size={20} className="secondary" /> Recent Activity
                             </h2>
                             <div className="scrollable-list">
-                                {stats.subscriptions.length === 0 ? (
-                                    <div style={{ color: 'var(--text-muted)', padding: '10px', textAlign: 'center', fontSize: '0.8rem' }}>
-                                        None detected
-                                    </div>
-                                ) : (
-                                    stats.subscriptions.map((s, i) => (
-                                        <div key={i} className="list-item" style={{ padding: '8px 0' }}>
-                                            <div style={{ flex: 1, minWidth: 0, marginRight: '8px' }}>
-                                                <div className="name" style={{ textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
-                                                    {s.desc.toLowerCase()}
-                                                </div>
-                                                <div className="sub-text" style={{ fontSize: '0.65rem' }}>Recurring Monthly</div>
+                                {(() => {
+                                    const allTxs = data.accounts
+                                        .flatMap(acc => (acc.transactions || []).map(t => ({ 
+                                            ...t, 
+                                            accountName: acc.name,
+                                            postedDate: Number(t.posted) > 2000000000 ? Number(t.posted) / 1000 : Number(t.posted)
+                                        })))
+                                        .sort((a, b) => b.postedDate - a.postedDate);
+
+                                    if (allTxs.length === 0) {
+                                        return (
+                                            <div style={{ color: 'var(--text-muted)', padding: '40px 20px', textAlign: 'center' }}>
+                                                No activity found.
                                             </div>
-                                            <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>${s.amount.toFixed(0)}</div>
+                                        );
+                                    }
+
+                                    return allTxs.slice(0, 100).map(t => {
+                                        const amt = parseFloat(t.amount);
+                                        return (
+                                            <div key={t.id || Math.random()} className="list-item">
+                                                <div style={{ flex: 1, minWidth: 0, marginRight: '16px' }}>
+                                                    <div className="name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {t.description}
+                                                    </div>
+                                                    <div className="sub-text">
+                                                        {new Date(t.postedDate * 1000).toLocaleDateString()} &middot; {t.accountName}
+                                                    </div>
+                                                </div>
+                                                <div style={{ fontWeight: 700, color: amt < 0 ? 'var(--liability)' : 'var(--asset)' }}>
+                                                    {amt > 0 ? '+' : '-'}${Math.abs(amt).toFixed(2)}
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        </div>
+
+                        {/* Column 3: Stats Stack (Visible in Home Tab) */}
+                        <div className={`stats-sidebar ${activeTab !== 'home' ? 'mobile-hidden' : ''}`}>
+                            {/* Spending Card */}
+                            <div className="glass-panel stat-card">
+                                <div className="stat-card-header">
+                                    <div className="stat-icon secondary">
+                                        <Activity size={20} />
+                                    </div>
+                                    <div className="stat-card-info">
+                                        <h3>30-DAY SPENDING</h3>
+                                        <div className="stat-amount">${stats.spending30d.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+                                    </div>
+                                </div>
+                                <div className="stat-card-footer">
+                                    {Object.entries(stats.spendingByAccount || {})
+                                        .sort(([,a], [,b]) => b - a)
+                                        .slice(0, 2)
+                                        .map(([name, amt]) => (
+                                            <div key={name} className="stat-footer-row">
+                                                <span className="spending-account-name">{name}</span>
+                                                <span className="spending-amount">${amt.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+
+                            {/* Recurring Panel */}
+                            <div className="glass-panel flex-grow-panel">
+                                <h2 className="section-header subscriptions-header">
+                                    <Activity size={16} className="danger" /> Subscriptions
+                                </h2>
+                                <div className="scrollable-list">
+                                    {stats.subscriptions.length === 0 ? (
+                                        <div className="empty-list-text">
+                                            None detected
                                         </div>
-                                    ))
-                                )}
+                                    ) : (
+                                        stats.subscriptions.map((s, i) => (
+                                            <div key={i} className="list-item">
+                                                <div className="subscription-info">
+                                                    <div className="name subscription-name">
+                                                        {s.desc.toLowerCase()}
+                                                    </div>
+                                                    <div className="sub-text">Recurring Monthly</div>
+                                                </div>
+                                                <div className="subscription-amount">${s.amount.toFixed(0)}</div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
         </div>
     );
